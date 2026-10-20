@@ -58,6 +58,9 @@ jobs:
         run: |
           vfox add --source "https://github.com/Peng-io/vfox-jdtls/releases/download/v0.1.0/vfox-jdtls-0.1.0.zip"
           vfox install jdtls@1.61.0
+          if [ "$RUNNER_OS" != "Windows" ]; then
+            eval "$(vfox activate bash)"
+          fi
           vfox use -g jdtls@1.61.0
 
       - name: Verify jdtls runs
