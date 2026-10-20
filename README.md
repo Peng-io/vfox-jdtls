@@ -34,10 +34,10 @@
 vfox add --source .
 ```
 
-发布后也可以从 [Releases](https://github.com/Peng-io/vfox-jdtls/releases) 下载 zip，再执行：
+也可以直接从 [Releases](https://github.com/Peng-io/vfox-jdtls/releases) 安装：
 
 ```bash
-vfox add --source <zip 文件路径>
+vfox add --source "https://github.com/Peng-io/vfox-jdtls/releases/download/v0.1.0/vfox-jdtls-0.1.0.zip"
 ```
 
 ## 使用
