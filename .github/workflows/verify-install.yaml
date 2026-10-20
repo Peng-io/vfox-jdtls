@@ -1,0 +1,62 @@
+name: Verify install
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install vfox (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          curl -sSL https://raw.githubusercontent.com/version-fox/vfox/main/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install vfox (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $url = "https://github.com/version-fox/vfox/releases/download/v1.0.13/vfox_1.0.13_windows_x86_64.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\vfox.zip"
+          Expand-Archive "$env:RUNNER_TEMP\vfox.zip" -DestinationPath "$env:RUNNER_TEMP\vfox" -Force
+          $exe = Get-ChildItem "$env:RUNNER_TEMP\vfox" -Recurse -Filter vfox.exe | Select-Object -First 1
+          Split-Path $exe.FullName | Out-File -Append -Encoding utf8 "$env:GITHUB_PATH"
+
+      - name: Add plugin and install JDT.LS
+        shell: bash
+        run: |
+          vfox add --source "https://github.com/Peng-io/vfox-jdtls/releases/download/v0.1.0/vfox-jdtls-0.1.0.zip"
+          vfox install jdtls@1.61.0
+          vfox use jdtls@1.61.0
+
+      - name: Verify jdtls runs
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            "$HOME/.vfox/sdks/jdtls/bin/jdtls.bat" --help
+          else
+            "$HOME/.vfox/sdks/jdtls/bin/jdtls" --help
+          fi
