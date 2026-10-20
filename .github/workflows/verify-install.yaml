@@ -32,7 +32,15 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          curl -sSL https://raw.githubusercontent.com/version-fox/vfox/main/install.sh | bash
+          mkdir -p "$HOME/.local/bin"
+          case "$RUNNER_OS" in
+            Linux) asset="vfox_1.0.13_linux_x86_64.tar.gz" ;;
+            macOS) asset="vfox_1.0.13_macos_aarch64.tar.gz" ;;
+          esac
+          tmp="$(mktemp -d)"
+          curl -sSL "https://github.com/version-fox/vfox/releases/download/v1.0.13/$asset" -o "$tmp/vfox.tar.gz"
+          tar -xzf "$tmp/vfox.tar.gz" -C "$tmp"
+          find "$tmp" -type f -name vfox -exec install -m 755 {} "$HOME/.local/bin/vfox" \;
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Install vfox (Windows)
@@ -50,7 +58,7 @@ jobs:
         run: |
           vfox add --source "https://github.com/Peng-io/vfox-jdtls/releases/download/v0.1.0/vfox-jdtls-0.1.0.zip"
           vfox install jdtls@1.61.0
-          vfox use jdtls@1.61.0
+          vfox use -g jdtls@1.61.0
 
       - name: Verify jdtls runs
         shell: bash
