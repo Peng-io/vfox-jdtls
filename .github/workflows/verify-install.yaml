@@ -17,6 +17,9 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
@@ -53,10 +56,23 @@ jobs:
           $exe = Get-ChildItem "$env:RUNNER_TEMP\vfox" -Recurse -Filter vfox.exe | Select-Object -First 1
           Split-Path $exe.FullName | Out-File -Append -Encoding utf8 "$env:GITHUB_PATH"
 
+      - name: Package plugin
+        shell: bash
+        run: |
+          python - <<'EOF'
+          import os, zipfile
+          files = ["metadata.lua", "LICENSE"]
+          for d in ("hooks", "lib"):
+              files += [os.path.join(d, f) for f in os.listdir(d)]
+          with zipfile.ZipFile("plugin.zip", "w") as z:
+              for f in files:
+                  z.write(f)
+          EOF
+
       - name: Add plugin and install JDT.LS
         shell: bash
         run: |
-          vfox add --source "https://github.com/Peng-io/vfox-jdtls/releases/download/v0.1.0/vfox-jdtls-0.1.0.zip"
+          vfox add --source "$GITHUB_WORKSPACE/plugin.zip"
           vfox install jdtls@1.61.0
           if [ "$RUNNER_OS" != "Windows" ]; then
             eval "$(vfox activate bash)"

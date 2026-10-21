@@ -12,14 +12,21 @@ function PLUGIN:PostInstall(ctx)
     end
 
     local installPath = sdkInfo.path
-    local cmd
+    local isWindows = string.lower(RUNTIME.osType or "") == "windows"
 
-    if string.lower(RUNTIME.osType or "") == "windows" then
+    --- 路径来自安装目录而非外部输入，但它会被拼进 shell 命令，仍需排除元字符
+    if isWindows then
+        if installPath:find('[&|<>^%%()!"]') ~= nil or installPath:find(" ") ~= nil then
+            error("安装路径包含不支持的字符: " .. installPath)
+        end
+    elseif installPath:find('[%$`"\\]') ~= nil then
+        error("安装路径包含不支持的字符: " .. installPath)
+    end
+
+    local cmd
+    if isWindows then
         --- vfox 通过 SysProcAttr.CmdLine 原样传命令，cmd 不会剥离双引号，
         --- 引号会被 tar 当成文件名的一部分，所以这里刻意不加引号。
-        if installPath:find(" ") ~= nil then
-            error("安装路径包含空格，无法构造解压命令: " .. installPath)
-        end
         --- 必须用 System32 的原生 tar：Git 附带的 MSYS tar 会把盘符路径二次转义
         cmd = string.format("%%SystemRoot%%\\System32\\tar.exe -xzf %s\\jdtls.bin -C %s", installPath, installPath)
     else

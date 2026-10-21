@@ -22,6 +22,11 @@ function jdtls.compareVersions(a, b)
     return wa < wb
 end
 
+--- 只接受官方发布包的固定命名，避免 latest.txt 被篡改后拼出异常路径
+local function isValidReleaseName(name)
+    return name:match("^jdt%-language%-server%-%d+%.%d+%.%d+%-%d+%.tar%.gz$") ~= nil
+end
+
 --- GET 请求，返回响应体；失败时返回 nil 与错误信息
 local function get(url, what)
     local resp, err = http.get({ url = url })
@@ -65,7 +70,7 @@ function jdtls.fetchRelease(version)
     local body = get(base .. "latest.txt", "请求 latest.txt")
     if body ~= nil then
         local name = body:gsub("%s+", "")
-        if name:match("%.tar%.gz$") then
+        if isValidReleaseName(name) then
             return base, name
         end
     end
@@ -80,7 +85,7 @@ function jdtls.fetchRelease(version)
         local href = a:attr("href")
         if href ~= nil then
             local candidate = href:match("([^/]+%.tar%.gz)$")
-            if candidate ~= nil then
+            if candidate ~= nil and isValidReleaseName(candidate) then
                 name = candidate
             end
         end

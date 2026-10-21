@@ -32,11 +32,12 @@ function PLUGIN:PreInstall(ctx)
         url = base .. fileName .. "#/jdtls.bin",
     }
 
-    --- 校验文件缺失时仍可安装，只是不校验
+    --- 缺少校验文件时拒绝安装：无法验证下载内容完整性
     local sha256 = jdtls.fetchSha256(base, fileName)
-    if sha256 ~= nil then
-        result.sha256 = sha256
+    if sha256 == nil then
+        error("无法获取校验文件: " .. base .. fileName .. ".sha256")
     end
+    result.sha256 = sha256
 
     return result
 end
